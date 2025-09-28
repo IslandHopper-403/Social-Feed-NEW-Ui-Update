@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Feed & Messages</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: #FFD700;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .settings-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .tab-switcher {
+            display: flex;
+            background: white;
+            padding: 12px 20px;
+            gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 68px;
+            z-index: 99;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #FF6B6B, #FF8C8C);
+            color: white;
+            border-color: #FF6B6B;
+        }
+        
+        .tab-icon {
+            font-size: 20px;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        
+        .content-view {
+            display: none;
+        }
+        
+        .content-view.active {
+            display: block;
+        }
+        
+        /* Social Feed Styles */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            overflow-x: auto;
+            background: white;
+            border-bottom: 1px solid #f1f5f9;
+            scrollbar-width: none;
+        }
+        
+        .filter-bar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .filter-chip {
+            padding: 8px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 13px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .filter-chip.active {
+            background: linear-gradient(135deg, #FF6B6B, #FF8C8C);
+            color: white;
+            border-color: #FF6B6B;
+        }
+        
+        .feed-container {
+            padding: 16px 20px 100px;
+        }
+        
+        .profile-card {
+            background: white;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .profile-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            gap: 12px;
+        }
+        
+        .profile-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex-shrink: 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .online-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 14px;
+            height: 14px;
+            background: #10b981;
+            border: 3px solid white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        }
+        
+        .profile-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .profile-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 2px;
+        }
+        
+        .profile-meta {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 13px;
+            color: #64748b;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .profile-image-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            background: #f1f5f9;
+            overflow: hidden;
+        }
+        
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .status-badges {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .badge-match {
+            background: rgba(255, 215, 0, 0.9);
+            color: #1e293b;
+        }
+        
+        .card-content {
+            padding: 16px;
+        }
+        
+        .profile-bio {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #475569;
+            margin-bottom: 12px;
+        }
+        
+        .interests-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .interest-tag {
+            padding: 6px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 13px;
+            color: #64748b;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            padding: 0 16px 16px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            height: 48px;
+            border-radius: 24px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-pass {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .btn-chat {
+            background: linear-gradient(135deg, #FF6B6B, #FF8C8C);
+            color: white;
+        }
+        
+        .btn-super {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: white;
+        }
+        
+        /* Messages Styles */
+        .promo-space {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 20px;
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .promo-space:hover {
+            transform: translateY(-2px);
+        }
+        
+        .promo-space::before {
+            content: '🎉';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 120px;
+            opacity: 0.15;
+        }
+        
+        .promo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .promo-badge {
+            background: rgba(255,255,255,0.25);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .promo-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .promo-details {
+            font-size: 14px;
+            opacity: 0.95;
+            margin-bottom: 12px;
+        }
+        
+        .promo-business {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .promo-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .promo-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .section-header {
+            padding: 20px 20px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        
+        .view-all {
+            font-size: 14px;
+            color: #3b82f6;
+            cursor: pointer;
+        }
+        
+        .friends-scroll {
+            display: flex;
+            gap: 15px;
+            padding: 0 20px 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .friends-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .friend-card {
+            flex-shrink: 0;
+            width: 100px;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .friend-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            margin: 0 auto 8px;
+            border: 3px solid #e2e8f0;
+            position: relative;
+        }
+        
+        .friend-avatar.online::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            background: #10b981;
+            border-radius: 50%;
+            border: 3px solid white;
+        }
+        
+        .friend-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .message-list {
+            padding: 0 20px 80px;
+        }
+        
+        .message-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .message-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+        
+        .message-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        .unread-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        
+        .message-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .message-preview {
+            font-size: 14px;
+            color: #64748b;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .message-preview.unread {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .business-indicator {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 430px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8C8C);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 12px;
+            color: white;
+            transition: background 0.3s ease;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+        }
+        
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <button class="back-btn">←</button>
+            <div class="header-title">Friends & Messages</div>
+        </div>
+        <button class="settings-btn">⚙️</button>
+    </div>
+    
+    <div class="tab-switcher">
+        <button class="tab-btn active" onclick="switchTab('social')">
+            <span class="tab-icon">🎀</span>
+            <span>Social Feed</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('messages')">
+            <span class="tab-icon">💬</span>
+            <span>Messages</span>
+            <div class="notification-dot"></div>
+        </button>
+    </div>
+    
+    <!-- Social Feed Content -->
+    <div class="content-view active" id="socialView">
+        <div class="filter-bar">
+            <div class="filter-chip active">All</div>
+            <div class="filter-chip">🟢 Online Now</div>
+            <div class="filter-chip">📍 Nearby (2km)</div>
+            <div class="filter-chip">💻 Digital Nomads</div>
+            <div class="filter-chip">🎒 Travelers</div>
+        </div>
+        
+        <div class="feed-container">
+            <div class="profile-card">
+                <div class="card-header">
+                    <div class="profile-avatar">
+                        JL
+                        <div class="online-dot"></div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name">Jessica Lewis, 28</div>
+                        <div class="profile-meta">
+                            <div class="meta-item">📍 1.2km away</div>
+                            <div class="meta-item">🔥 85% match</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-image-container">
+                    <img class="profile-image" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop" alt="Profile">
+                    <div class="status-badges">
+                        <div class="status-badge badge-match">⭐ Top Match</div>
+                        <div class="status-badge">🟢 Online</div>
+                    </div>
+                </div>
+                
+                <div class="card-content">
+                    <div class="profile-bio">
+                        New to town, looking to meet new friends 😊 Stampede anyone!? First time going!
+                    </div>
+                    <div class="interests-container">
+                        <div class="interest-tag">Reading</div>
+                        <div class="interest-tag">Gym</div>
+                        <div class="interest-tag">Music</div>
+                        <div class="interest-tag">Friends</div>
+                    </div>
+                </div>
+                
+                <div class="card-actions">
+                    <button class="action-btn btn-pass">✕</button>
+                    <button class="action-btn btn-chat">💬 Chat</button>
+                    <button class="action-btn btn-super">⚡</button>
+                </div>
+            </div>
+            
+            <div class="profile-card">
+                <div class="card-header">
+                    <div class="profile-avatar" style="background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%);">
+                        DS
+                        <div class="online-dot"></div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name">Dave Smith, 32</div>
+                        <div class="profile-meta">
+                            <div class="meta-item">📍 0.8km away</div>
+                            <div class="meta-item">🔥 76% match</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-image-container">
+                    <img class="profile-image" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop" alt="Profile">
+                    <div class="status-badges">
+                        <div class="status-badge">🟢 Online</div>
+                    </div>
+                </div>
+                
+                <div class="card-content">
+                    <div class="profile-bio">
+                        Digital nomad loving Hoi An vibes ✨ Always down for beach days and exploring local culture.
+                    </div>
+                    <div class="interests-container">
+                        <div class="interest-tag">Surfing</div>
+                        <div class="interest-tag">Coffee</div>
+                        <div class="interest-tag">Adventure</div>
+                        <div class="interest-tag">Photography</div>
+                    </div>
+                </div>
+                
+                <div class="card-actions">
+                    <button class="action-btn btn-pass">✕</button>
+                    <button class="action-btn btn-chat">💬 Chat</button>
+                    <button class="action-btn btn-super">⚡</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Messages Content -->
+    <div class="content-view" id="messagesView">
+        <div class="promo-space">
+            <div class="promo-header">
+                <div class="promo-badge">🔥 DATE NIGHT SPECIAL</div>
+                <div style="font-size: 20px;">→</div>
+            </div>
+            <div class="promo-title">55$ 3 Course meal + Bottle</div>
+            <div class="promo-details">Friday & Sunday Only • Limited Seating</div>
+            <div class="promo-business">
+                <div class="promo-logo">🍽️</div>
+                <div class="promo-name">Date Night Restaurant</div>
+            </div>
+        </div>
+        
+        <div class="section-header">
+            <div class="section-title">Active Now</div>
+            <div class="view-all">See All</div>
+        </div>
+        
+        <div class="friends-scroll">
+            <div class="friend-card">
+                <div class="friend-avatar online" style="background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop')"></div>
+                <div class="friend-name">Jessica</div>
+            </div>
+            <div class="friend-card">
+                <div class="friend-avatar online" style="background-image: url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop')"></div>
+                <div class="friend-name">Dave</div>
+            </div>
+            <div class="friend-card">
+                <div class="friend-avatar online" style="background-image: url('https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop')"></div>
+                <div class="friend-name">Rebecca</div>
+            </div>
+            <div class="friend-card">
+                <div class="friend-avatar" style="background-image: url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop')"></div>
+                <div class="friend-name">Mike</div>
+            </div>
+        </div>
+        
+        <div class="section-header">
+            <div class="section-title">Recent Messages</div>
+        </div>
+        
+        <div class="message-list">
+            <div class="message-item">
+                <div class="message-avatar" style="background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop')">
+                    <div class="unread-badge">3</div>
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <div class="message-name">Jessica Profile</div>
+                        <div class="message-time">2m ago</div>
+                    </div>
+                    <div class="message-preview unread">Hey! Want to check out that new place tonight?</div>
+                </div>
+            </div>
+            
+            <div class="message-item">
+                <div class="message-avatar" style="background-image: url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop')">
+                    <div class="unread-badge">1</div>
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <div class="message-name">
+                            VRKADE
+                            <span class="business-indicator">BUSINESS</span>
+                        </div>
+                        <div class="message-time">15m ago</div>
+                    </div>
+                    <div class="message-preview unread">Thanks for your interest! We have availability this weekend...</div>
+                </div>
+            </div>
+            
+            <div class="message-item">
+                <div class="message-avatar" style="background-image: url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop')"></div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <div class="message-name">Dave Social</div>
+                        <div class="message-time">1h ago</div>
+                    </div>
+                    <div class="message-preview">Sounds good! See you there 👍</div>
+                </div>
+            </div>
+            
+            <div class="message-item">
+                <div class="message-avatar" style="background-image: url('https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop')"></div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <div class="message-name">Rebecca Fun</div>
+                        <div class="message-time">3h ago</div>
+                    </div>
+                    <div class="message-preview">That sounds amazing! Count me in 🎉</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bottom-nav">
+        <div class="nav-item">
+            <div class="nav-icon">🗺️</div>
+            <div class="nav-label">Your Event</div>
+        </div>
+        <div class="nav-item" style="background: rgba(255,255,255,0.2);">
+            <div class="nav-icon">🎀</div>
+            <div class="nav-label">Your Social</div>
+        </div>
+        <div class="nav-item">
+            <div class="nav-icon">📦</div>
+            <div class="nav-label">Your Activity</div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(tab) {
+            const socialBtn = document.querySelector('.tab-btn:first-child');
+            const messagesBtn = document.querySelector('.tab-btn:last-child');
+            const socialView = document.getElementById('socialView');
+            const messagesView = document.getElementById('messagesView');
+            
+            if (tab === 'social') {
+                socialBtn.classList.add('active');
+                messagesBtn.classList.remove('active');
+                socialView.classList.add('active');
+                messagesView.classList.remove('active');
+            } else {
+                socialBtn.classList.remove('active');
+                messagesBtn.classList.add('active');
+                socialView.classList.remove('active');
+                messagesView.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
